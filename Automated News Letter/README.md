@@ -33,31 +33,6 @@ The workflow is divided into five logical stages:
 
 ---
 
-## 🚀 Getting Started
-
-### **Prerequisites**
-- An instance of **n8n** (Desktop, Cloud, or Docker).
-- A **Groq Cloud** account (for AI processing).
-- A **Google Cloud** project with Gmail API enabled (or SMTP credentials).
-
-### **Setup Instructions**
-1. **Import the Workflow:**
-   - Download the `.json` file from this repo.
-   - In n8n, click **Import from File** and select the downloaded JSON.
-
-2. **Configure Credentials:**
-   - **Groq API:** Create an API key at [console.groq.com](https://console.groq.com/) and add it to the Groq node.
-   - **Gmail OAuth2:** Follow the n8n guide to link your Google account to the Gmail node.
-
-3. **Update Settings:**
-   - Open the **Workflow Configuration** node.
-   - Update the `recipientEmail` value to your target email address.
-
-4. **Test & Activate:**
-   - Click **Test Workflow** to send a test email.
-   - Toggle the **Active** switch in the top right corner to enable the daily schedule.
-
----
 
 ## 🛠️ Built With
 - **[n8n](https://n8n.io/)** - Workflow automation platform.
