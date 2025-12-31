@@ -1,0 +1,168 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "luxury-lead-dolce",
+        "options": {}
+      },
+      "id": "f1dc3a16-6e23-4c2f-8258-2aa56a51d8d7",
+      "name": "Webhook: Form Submission",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        432
+      ],
+      "webhookId": "7cad28ce-bc58-4420-ae08-764ff4a873c6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data from the webhook\nconst rawData = items[0].json.body || items[0].json.query || {};\n\n// Format: Capitalize name, lowercase email, strip phone spaces\nconst cleanName = (rawData.name || 'Interested Party').trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');\nconst cleanEmail = (rawData.email || '').toLowerCase().trim();\nconst cleanPhone = (rawData.phone || '').replace(/[^0-9+]/g, '');\nconst country = rawData.country || 'Unknown';\nconst intent = rawData.intent || 'Standard';\nconst budget = rawData.budget || 'Not specified';\nconst message = rawData.message || '';\n\n// Logic: High Value if they are an 'Investor' or mention 'DACH' region\nconst isHighValue = (intent.toLowerCase().includes('investor') || country.match(/Germany|Switzerland|Austria|UK/i)) ? true : false;\n\nreturn [{\n  json: {\n    name: cleanName,\n    email: cleanEmail,\n    phone: cleanPhone,\n    country: country,\n    intent: intent,\n    budget: budget,\n    message: message,\n    isHighValue: isHighValue,\n    wa_link: `https://wa.me/${cleanPhone.replace('+', '')}`\n  }\n}];"
+      },
+      "id": "d203d9f1-c329-4e07-96e5-dfe74817f40e",
+      "name": "Data Cleansing & Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        96,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "operation": "append",
+        "application": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appKkhgY0v98XPuAt"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblFBnLm25Jemn99k"
+        },
+        "addAllFields": false,
+        "options": {}
+      },
+      "id": "0eebebb4-049f-4502-96a0-d5881b29a856",
+      "name": "Airtable: Log Lead",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [
+        304,
+        432
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "hxnpGsqBsbqXhQ5S",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $('Data Cleansing & Logic').item.json.isHighValue }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a34540a1-7dbd-49f0-872d-abc8d4cd4c12",
+      "name": "Filter: VIP?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        528,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "tharunsaidevarla@gmail.com",
+        "subject": "🏡 New Lead Notification - Dolce Residences",
+        "message": "=<html>\n<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>\n  <div style='max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;'>\n    <h2 style='color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px;'>🏡 New Lead Notification</h2>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>Lead Category:</h3>\n      <p><strong>Qualification Score:</strong> {{ $('Data Cleansing & Logic').item.json.isHighValue ? '8' : '5' }}/10</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>📞 Contact Information</h3>\n      <p><strong>Name:</strong> {{ $('Data Cleansing & Logic').item.json.name }}</p>\n      <p><strong>Email:</strong> <a href='mailto:{{ $('Data Cleansing & Logic').item.json.email }}'>{{ $('Data Cleansing & Logic').item.json.email }}</a></p>\n      <p><strong>Phone:</strong> <a href='{{ $('Data Cleansing & Logic').item.json.wa_link }}'>{{ $('Data Cleansing & Logic').item.json.phone }}</a></p>\n      <p><strong>Country:</strong> {{ $('Data Cleansing & Logic').item.json.country }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>🏠 Lead Details</h3>\n      <p><strong>Budget:</strong> {{ $('Data Cleansing & Logic').item.json.budget }}</p>\n      <p><strong>Buyer Type:</strong> {{ $('Data Cleansing & Logic').item.json.intent }}</p>\n      <p><strong>Location:</strong> {{ $('Data Cleansing & Logic').item.json.country }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>🤖 AI Analysis</h3>\n      <p><strong>Key Insights:</strong></p>\n      <p>{{ $('Data Cleansing & Logic').item.json.isHighValue ? 'High-value lead from premium market (DACH/UK region or Investor intent)' : 'Standard lead - requires qualification' }}</p>\n      <p><strong>Recommended Action:</strong></p>\n      <p>{{ $('Data Cleansing & Logic').item.json.isHighValue ? 'Priority follow-up within 1 hour. Send premium dossier and schedule consultation.' : 'Follow up within 24 hours with standard information package.' }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>💬 Message from Lead</h3>\n      <p style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #3498db; font-style: italic;'>{{ $('Data Cleansing & Logic').item.json.message || 'No message provided' }}</p>\n    </div>\n    \n    <div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;'>\n      <p style='color: #7f8c8d; font-size: 12px;'>Dolce Residences Tivat - Luxury Real Estate CRM</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "81b58665-6dd7-4850-a1c9-bbe2772616d6",
+      "name": "Gmail: Send Dossier",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        816,
+        448
+      ],
+      "webhookId": "ff7a4867-3e7f-46f0-bc87-361a854aa536",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8wRgYKaG0WWGs7Jw",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Data Cleansing & Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Cleansing & Logic": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Log Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Log Lead": {
+      "main": [
+        [
+          {
+            "node": "Filter: VIP?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: VIP?": {
+      "main": [
+        [
+          {
+            "node": "Gmail: Send Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "42eeb6e5-5482-45ab-9e84-eb5df4fe1d2d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3a1c916ddcdecafb1a2450b9ef16e6590d05541a32306bf5a127eb19c2e31b65"
+  },
+  "id": "S63t6kRdCiW16bnD",
+  "tags": []
+}
