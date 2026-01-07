@@ -1,151 +1,283 @@
 {
-  "name": "My workflow",
+  "name": "Luxury Real Estate Lead Gen & Automation.json",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "luxury-lead-dolce",
+        "path": "dolce-residences-lead",
+        "responseMode": "responseNode",
         "options": {}
       },
-      "id": "f1dc3a16-6e23-4c2f-8258-2aa56a51d8d7",
-      "name": "Webhook: Form Submission",
+      "id": "462a2af8-da94-40e6-ad66-0f18046b313d",
+      "name": "Input | Lead Capture",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        -96,
-        432
-      ],
-      "webhookId": "7cad28ce-bc58-4420-ae08-764ff4a873c6"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Extract data from the webhook\nconst rawData = items[0].json.body || items[0].json.query || {};\n\n// Format: Capitalize name, lowercase email, strip phone spaces\nconst cleanName = (rawData.name || 'Interested Party').trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');\nconst cleanEmail = (rawData.email || '').toLowerCase().trim();\nconst cleanPhone = (rawData.phone || '').replace(/[^0-9+]/g, '');\nconst country = rawData.country || 'Unknown';\nconst intent = rawData.intent || 'Standard';\nconst budget = rawData.budget || 'Not specified';\nconst message = rawData.message || '';\n\n// Logic: High Value if they are an 'Investor' or mention 'DACH' region\nconst isHighValue = (intent.toLowerCase().includes('investor') || country.match(/Germany|Switzerland|Austria|UK/i)) ? true : false;\n\nreturn [{\n  json: {\n    name: cleanName,\n    email: cleanEmail,\n    phone: cleanPhone,\n    country: country,\n    intent: intent,\n    budget: budget,\n    message: message,\n    isHighValue: isHighValue,\n    wa_link: `https://wa.me/${cleanPhone.replace('+', '')}`\n  }\n}];"
-      },
-      "id": "d203d9f1-c329-4e07-96e5-dfe74817f40e",
-      "name": "Data Cleansing & Logic",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 1,
-      "position": [
-        96,
-        432
-      ]
-    },
-    {
-      "parameters": {
-        "authentication": "airtableTokenApi",
-        "operation": "append",
-        "application": {
-          "__rl": true,
-          "mode": "id",
-          "value": "appKkhgY0v98XPuAt"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "id",
-          "value": "tblFBnLm25Jemn99k"
-        },
-        "addAllFields": false,
-        "options": {}
-      },
-      "id": "0eebebb4-049f-4502-96a0-d5881b29a856",
-      "name": "Airtable: Log Lead",
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 1,
-      "position": [
-        304,
-        432
-      ],
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "hxnpGsqBsbqXhQ5S",
-          "name": "Airtable Personal Access Token account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "={{ $('Data Cleansing & Logic').item.json.isHighValue }}",
-              "value2": true
-            }
-          ]
-        }
-      },
-      "id": "a34540a1-7dbd-49f0-872d-abc8d4cd4c12",
-      "name": "Filter: VIP?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        528,
-        432
-      ]
-    },
-    {
-      "parameters": {
-        "sendTo": "tharunsaidevarla@gmail.com",
-        "subject": "🏡 New Lead Notification - Dolce Residences",
-        "message": "=<html>\n<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>\n  <div style='max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;'>\n    <h2 style='color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px;'>🏡 New Lead Notification</h2>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>Lead Category:</h3>\n      <p><strong>Qualification Score:</strong> {{ $('Data Cleansing & Logic').item.json.isHighValue ? '8' : '5' }}/10</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>📞 Contact Information</h3>\n      <p><strong>Name:</strong> {{ $('Data Cleansing & Logic').item.json.name }}</p>\n      <p><strong>Email:</strong> <a href='mailto:{{ $('Data Cleansing & Logic').item.json.email }}'>{{ $('Data Cleansing & Logic').item.json.email }}</a></p>\n      <p><strong>Phone:</strong> <a href='{{ $('Data Cleansing & Logic').item.json.wa_link }}'>{{ $('Data Cleansing & Logic').item.json.phone }}</a></p>\n      <p><strong>Country:</strong> {{ $('Data Cleansing & Logic').item.json.country }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>🏠 Lead Details</h3>\n      <p><strong>Budget:</strong> {{ $('Data Cleansing & Logic').item.json.budget }}</p>\n      <p><strong>Buyer Type:</strong> {{ $('Data Cleansing & Logic').item.json.intent }}</p>\n      <p><strong>Location:</strong> {{ $('Data Cleansing & Logic').item.json.country }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>🤖 AI Analysis</h3>\n      <p><strong>Key Insights:</strong></p>\n      <p>{{ $('Data Cleansing & Logic').item.json.isHighValue ? 'High-value lead from premium market (DACH/UK region or Investor intent)' : 'Standard lead - requires qualification' }}</p>\n      <p><strong>Recommended Action:</strong></p>\n      <p>{{ $('Data Cleansing & Logic').item.json.isHighValue ? 'Priority follow-up within 1 hour. Send premium dossier and schedule consultation.' : 'Follow up within 24 hours with standard information package.' }}</p>\n    </div>\n    \n    <div style='background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n      <h3 style='color: #3498db; margin-top: 0;'>💬 Message from Lead</h3>\n      <p style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #3498db; font-style: italic;'>{{ $('Data Cleansing & Logic').item.json.message || 'No message provided' }}</p>\n    </div>\n    \n    <div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;'>\n      <p style='color: #7f8c8d; font-size: 12px;'>Dolce Residences Tivat - Luxury Real Estate CRM</p>\n    </div>\n  </div>\n</body>\n</html>",
-        "options": {}
-      },
-      "id": "81b58665-6dd7-4850-a1c9-bbe2772616d6",
-      "name": "Gmail: Send Dossier",
-      "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
       "position": [
-        816,
-        448
+        1136,
+        1376
       ],
-      "webhookId": "ff7a4867-3e7f-46f0-bc87-361a854aa536",
+      "webhookId": "4041d2c6-2a35-4fa5-b9a8-3bfb7b026820"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e466a4f7-315b-4dbe-bb0d-0666b4656a3a",
+      "name": "Config | Workflow Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://ip-api.com/json/' + $('Config | Workflow Settings').item.json.ip }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {},
+          "timeout": 10000
+        }
+      },
+      "id": "a35b2ffa-40a8-46da-9fa0-d45cd949e087",
+      "name": "Enrichment | Geo IP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1584,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following lead data and qualify them:\n\nLead Information:\n- Name: {{ $('Config | Workflow Settings').item.json.name }}\n- Email: {{ $('Config | Workflow Settings').item.json.email }}\n- Phone: {{ $('Config | Workflow Settings').item.json.phone }}\n- Country: {{ $('Config | Workflow Settings').item.json.country }}\n- Budget: {{ $('Config | Workflow Settings').item.json.budget }}\n- Message: {{ $('Config | Workflow Settings').item.json.message }}\n- Location: {{ $('Enrichment | Geo IP').item.json.city }}, {{ $('Enrichment | Geo IP').item.json.country }}\n- Timezone: {{ $('Enrichment | Geo IP').item.json.timezone }}\n\nQualify this lead based on:\n1. Budget alignment (villas are high-end luxury)\n2. Geographic match (Netherlands, Germany, Switzerland, UK priority)\n3. Intent signals in message\n4. Urgency indicators\n\nReturn a structured assessment with:\n- leadScore (0-100)\n- leadCategory (1=Hot, 2=Warm, 3=Cold)\n- buyerType (investor/lifestyle/mixed)\n- urgencyLevel (high/medium/low)\n- qualificationNotes (brief summary)\n- recommendedAction (immediate_call/email_followup/nurture/disqualify)",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a luxury real estate lead qualification expert for Dolce Residences in Tivat, Montenegro - 5 high-end villas with private pools, 200m from the sea, targeting high-net-worth investors and lifestyle buyers from Netherlands, Germany, Switzerland (DACH), and UK. Your role is to analyze lead data and provide structured qualification assessments based on budget alignment, geographic match, intent signals, and urgency indicators."
+        }
+      },
+      "id": "0ecb3949-b21c-43c1-9b58-d7392f0b5a4e",
+      "name": "AI | Lead Qualification Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "value1": "={{ $json.output.leadCategory }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "equal",
+              "value2": 1,
+              "outputKey": "Hot Lead"
+            },
+            {
+              "operation": "equal",
+              "value2": 2,
+              "outputKey": "Warm Lead"
+            },
+            {
+              "operation": "equal",
+              "value2": 3,
+              "outputKey": "Cold Lead"
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "2ac13cc9-7c3b-45ba-8d50-2241169f18bd",
+      "name": "Orchestration | Lead Routing",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokensToSample": 1024,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1816,
+        1600
+      ],
+      "id": "e2037fd8-0d6c-446f-8528-f25c38d02304",
+      "name": "Groq Chat Model",
       "credentials": {
-        "gmailOAuth2": {
-          "id": "8wRgYKaG0WWGs7Jw",
-          "name": "Gmail account 2"
+        "groqApi": {
+          "id": "KuxQytUCL5lTIW51",
+          "name": "Groq account 3"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"leadScore\": 85,\n  \"leadCategory\": 1,\n  \"buyerType\": \"investor\",\n  \"urgencyLevel\": \"high\",\n  \"qualificationNotes\": \"Strong investor profile from target market\",\n  \"recommendedAction\": \"immediate_call\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1944,
+        1600
+      ],
+      "id": "36926a5f-c527-401b-8cd8-03cb4e1cd120",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "dtharunsai888@gmail.com",
+        "subject": "={{ '🔔 New ' + (['Hot Lead 🔥', 'Warm Lead ⚡', 'Cold Lead ❄️'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'Lead') + ' - ' + $('Config | Workflow Settings').item.json.name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n<style>\nbody { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n.container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }\n.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n.header h1 { margin: 0; font-size: 28px; }\n.badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-top: 10px; }\n.hot { background-color: #ff4444; }\n.warm { background-color: #ffaa00; }\n.cold { background-color: #4a90e2; }\n.content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n.section { margin-bottom: 25px; }\n.section h2 { color: #667eea; font-size: 18px; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }\n.info-row { display: flex; margin-bottom: 10px; }\n.label { font-weight: bold; min-width: 150px; color: #666; }\n.value { color: #333; }\n.score-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }\n.score-box .score { font-size: 48px; font-weight: bold; }\n.score-box .label { color: white; font-size: 14px; }\n.action-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }\n.action-box strong { color: #856404; }\n.footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"header\">\n<h1>🏡 Dolce Residences</h1>\n<h2>New Lead Notification</h2>\n<span class=\"badge {{ ['hot', 'warm', 'cold'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'cold' }}\">\n{{ ['🔥 HOT LEAD', '⚡ WARM LEAD', '❄️ COLD LEAD'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'LEAD' }}\n</span>\n</div>\n\n<div class=\"content\">\n<div class=\"score-box\">\n<div class=\"score\">{{ $('AI | Lead Qualification Agent').item.json.output.leadScore || 0 }}/100</div>\n<div class=\"label\">LEAD SCORE</div>\n</div>\n\n<div class=\"section\">\n<h2>👤 Contact Information</h2>\n<div class=\"info-row\">\n<span class=\"label\">Name:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.name || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Email:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.email || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Phone:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.phone || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Country:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.country || 'N/A' }}</span>\n</div>\n</div>\n\n<div class=\"section\">\n<h2>💰 Lead Details</h2>\n<div class=\"info-row\">\n<span class=\"label\">Budget:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.budget || 'Not specified' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Buyer Type:</span>\n<span class=\"value\">{{ $('AI | Lead Qualification Agent').item.json.output.buyerType || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Urgency Level:</span>\n<span class=\"value\">{{ $('AI | Lead Qualification Agent').item.json.output.urgencyLevel || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">IP Location:</span>\n<span class=\"value\">{{ $('Enrichment | Geo IP').item.json.city || 'Unknown' }}, {{ $('Enrichment | Geo IP').item.json.country || 'Unknown' }}</span>\n</div>\n</div>\n\n<div class=\"section\">\n<h2>💬 Message</h2>\n<p style=\"background: #f5f5f5; padding: 15px; border-radius: 5px; font-style: italic;\">\n{{ $('Config | Workflow Settings').item.json.message || 'No message provided' }}\n</p>\n</div>\n\n<div class=\"action-box\">\n<strong>🎯 Recommended Action:</strong> {{ $('AI | Lead Qualification Agent').item.json.output.recommendedAction || 'Review required' }}\n</div>\n\n<div class=\"section\">\n<h2>📊 Qualification Notes</h2>\n<p>{{ $('AI | Lead Qualification Agent').item.json.output.qualificationNotes || 'No notes available' }}</p>\n</div>\n\n<div class=\"footer\">\n<p>⏰ Received: {{ $now.toLocaleString() }}</p>\n<p>Dolce Residences - Luxury Villas in Tivat, Montenegro</p>\n</div>\n</div>\n</div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2384,
+        1472
+      ],
+      "id": "d136584f-a147-4f35-938a-8809318f3e48",
+      "name": "Send a message",
+      "webhookId": "8d50bf49-c372-4fb9-944d-c330db170746",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2CEpVEQxD6a6wCbo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Lead received and processed successfully\",\n  \"leadScore\": {{ $('AI | Lead Qualification Agent').item.json.output.leadScore }},\n  \"leadCategory\": {{ $('AI | Lead Qualification Agent').item.json.output.leadCategory }}\n}",
+        "options": {}
+      },
+      "id": "17d6cd06-11c9-4fc3-a0a5-a22c61889077",
+      "name": "Response | Webhook Confirmation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2592,
+        1376
+      ]
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook: Form Submission": {
+    "Input | Lead Capture": {
       "main": [
         [
           {
-            "node": "Data Cleansing & Logic",
+            "node": "Config | Workflow Settings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Data Cleansing & Logic": {
+    "Config | Workflow Settings": {
       "main": [
         [
           {
-            "node": "Airtable: Log Lead",
+            "node": "Enrichment | Geo IP",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Airtable: Log Lead": {
+    "Enrichment | Geo IP": {
       "main": [
         [
           {
-            "node": "Filter: VIP?",
+            "node": "AI | Lead Qualification Agent",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Filter: VIP?": {
+    "AI | Lead Qualification Agent": {
       "main": [
         [
           {
-            "node": "Gmail: Send Dossier",
+            "node": "Orchestration | Lead Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI | Lead Qualification Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI | Lead Qualification Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestration | Lead Routing": {
+      "main": [
+        [
+          {
+            "node": "Response | Webhook Confirmation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Response | Webhook Confirmation",
             "type": "main",
             "index": 0
           }
@@ -158,11 +290,11 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "42eeb6e5-5482-45ab-9e84-eb5df4fe1d2d",
+  "versionId": "7a4bc7f7-a2c6-4c41-920d-bf8d3537ed44",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "3a1c916ddcdecafb1a2450b9ef16e6590d05541a32306bf5a127eb19c2e31b65"
+    "instanceId": "704e4f332e426a17013fa2352aa6a0f3c62603030d965943652e894ebdb4505f"
   },
-  "id": "S63t6kRdCiW16bnD",
+  "id": "EjoGxQ6L2dEdvTzh",
   "tags": []
 }
