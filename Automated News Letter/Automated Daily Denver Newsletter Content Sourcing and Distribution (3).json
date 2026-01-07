@@ -1,0 +1,440 @@
+{
+  "name": "Automated Daily Denver Newsletter Content Sourcing and Distribution",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "c035bb60-bf03-481f-b796-4178e75798fd",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "newsRssUrl",
+              "value": "https://denverite.com/feed/",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "eventsRssUrl",
+              "value": "https://www.westword.com/denver/rss/events",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "weatherApiUrl",
+              "value": "https://api.weather.gov/gridpoints/BOU/62,61/forecast",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "weatherApiKey",
+              "value": "f97a7a2c2b0c8e3590119589c323940c",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "recipientEmail",
+              "value": "dtharunsai888@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "senderName",
+              "value": "Denver Daily Newsletter",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "newsletterSubject",
+              "value": "=Breaking: Real-Time Denver News - {{ $now.format(\"h:mm A, MMMM d\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "4b92d733-cf15-436e-afa0-e5b57e1d91a9",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.newsRssUrl }}",
+        "options": {}
+      },
+      "id": "bddab7f5-de1e-4719-a04c-b499ac122062",
+      "name": "Denver News RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        2128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.weatherApiUrl }}",
+        "options": {}
+      },
+      "id": "0cd82141-a1a5-45bb-a8ed-d111cbfa2a0f",
+      "name": "Denver Weather API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        608,
+        2400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0d31fff7-1ba4-4ab7-ab2a-ace8ec343ce6",
+      "name": "Combine All Content",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "contentType",
+              "value": "={{ $json.title ? \"article\" : \"weather\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "title",
+              "value": "={{ $json.title || \"Denver Weather\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "description",
+              "value": "={{ $json.description || $json.contentSnippet || \"Current weather conditions\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "link",
+              "value": "={{ $json.link || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "pubDate",
+              "value": "={{ $json.pubDate || $json.isoDate || \"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38cf9a0e-4885-4623-aa01-f81dd18dae25",
+      "name": "Format Content Items",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "890760ec-c8da-4670-9536-733587d8cb18",
+      "name": "Aggregate Content",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Today is {{ $now.format(\"MMMM d, yyyy\") }}. Here is the content to include in today's newsletter:\n\n{{ $json.data.map(item => `Title: ${item.title}\nType: ${item.contentType}\nDescription: ${item.description.substring(0, 200)}...\nLink: ${item.link}\nDate: ${item.pubDate}`).join(\"\\n\\n\") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a real-time news editor for Denver breaking news alerts.\n\nYour task is to:\n1. Review the latest news articles and weather updates\n2. Select the most recent and newsworthy items\n3. Write brief, urgent summaries (1-2 sentences each)\n4. Create a short introduction highlighting what's happening right now\n5. Return structured content focused on timeliness\n\nGuidelines:\n- Prioritize breaking news and time-sensitive information\n- Keep it concise - this is a quick update, not a full newsletter\n- Use present tense to emphasize real-time nature\n- Include 3-5 top stories maximum\n- Weather should be current conditions and immediate forecast\n- Tone should be informative and urgent"
+        }
+      },
+      "id": "e27df9bb-3974-4bb2-b226-db93f7f7d32e",
+      "name": "Newsletter Content Generator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1520,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"introduction\": {\n      \"type\": \"string\",\n      \"description\": \"Introduction text for the newsletter\"\n    },\n    \"topNews\": {\n      \"type\": \"array\",\n      \"description\": \"Array of top news items\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"summary\": {\n            \"type\": \"string\"\n          },\n          \"link\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\"title\", \"summary\", \"link\"]\n      }\n    },\n    \"events\": {\n      \"type\": \"array\",\n      \"description\": \"Array of upcoming events\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"summary\": {\n            \"type\": \"string\"\n          },\n          \"link\": {\n            \"type\": \"string\"\n          },\n          \"date\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\"title\", \"summary\", \"link\", \"date\"]\n      }\n    },\n    \"weather\": {\n      \"type\": \"object\",\n      \"description\": \"Weather information\",\n      \"properties\": {\n        \"summary\": {\n          \"type\": \"string\"\n        },\n        \"temperature\": {\n          \"type\": \"string\"\n        },\n        \"conditions\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\"summary\", \"temperature\", \"conditions\"]\n    }\n  },\n  \"required\": [\"introduction\", \"topNews\", \"events\", \"weather\"]\n}"
+      },
+      "id": "0d74d01a-bebf-43de-8b1f-f99e5ce6b945",
+      "name": "Newsletter Structure Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1712,
+        2464
+      ]
+    },
+    {
+      "parameters": {
+        "html": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Daily Denver Newsletter</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Denver Real-Time News Alert</h1>\n      <p class=\"date\">{{ $now.format('h:mm A - MMMM d, yyyy') }}</p>\n    </div>\n\n    <div class=\"section introduction\">\n      <h2>Welcome</h2>\n      <p>{{ $json.introduction }}</p>\n    </div>\n\n    <div class=\"section news\">\n      <h2>📰 Today's News</h2>\n      <div class=\"content\">\n        {{ $json.news }}\n      </div>\n    </div>\n\n    <div class=\"section events\">\n      <h2>🎉 Upcoming Events</h2>\n      <div class=\"content\">\n        {{ $json.events }}\n      </div>\n    </div>\n\n    <div class=\"section weather\">\n      <h2>🌤️ Weather Update</h2>\n      <div class=\"content\">\n        {{ $json.weather }}\n      </div>\n    </div>\n\n    <div class=\"footer\">\n      <p>Thank you for reading the Daily Denver Newsletter!</p>\n      <p class=\"small\">Real-time updates delivered hourly</p>\n    </div>\n  </div>\n</body>\n</html>\n\n<style>\nbody {\n  font-family: Arial, sans-serif;\n  background-color: #f4f4f4;\n  margin: 0;\n  padding: 20px;\n}\n\n.container {\n  max-width: 800px;\n  margin: 0 auto;\n  background-color: #ffffff;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n  overflow: hidden;\n}\n\n.header {\n  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n  color: white;\n  text-align: center;\n  padding: 40px 20px;\n}\n\n.header h1 {\n  margin: 0;\n  font-size: 36px;\n  font-weight: bold;\n}\n\n.date {\n  margin: 10px 0 0 0;\n  font-size: 16px;\n  opacity: 0.9;\n}\n\n.section {\n  padding: 30px;\n  border-bottom: 1px solid #e0e0e0;\n}\n\n.section:last-of-type {\n  border-bottom: none;\n}\n\n.section h2 {\n  color: #333;\n  font-size: 24px;\n  margin-top: 0;\n  margin-bottom: 15px;\n  font-weight: bold;\n}\n\n.content {\n  color: #555;\n  font-size: 16px;\n  line-height: 1.6;\n}\n\n.introduction {\n  background-color: #f8f9fa;\n}\n\n.footer {\n  background-color: #333;\n  color: white;\n  text-align: center;\n  padding: 30px 20px;\n}\n\n.footer p {\n  margin: 5px 0;\n}\n\n.small {\n  font-size: 14px;\n  opacity: 0.8;\n}\n</style>"
+      },
+      "id": "51f193b3-4256-4e15-a26f-58e84d4b56a6",
+      "name": "Generate HTML Newsletter",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        2096,
+        2224
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Workflow Configuration').first().json.recipientEmail }}",
+        "subject": "={{ $('Workflow Configuration').first().json.newsletterSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.html }}",
+        "options": {
+          "senderName": "={{ $('Workflow Configuration').first().json.senderName }}"
+        }
+      },
+      "id": "bb22133c-2955-44b2-83a6-001b9d1588e4",
+      "name": "Send Newsletter Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2320,
+        2224
+      ],
+      "webhookId": "77d7bdcb-198c-4482-a784-a8e8975b25cd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "VJlrU3WOjhn1zFOA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "9413f1d3-9448-4997-97c1-ec9810199dfc",
+      "name": "Groq LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        2464
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "rqTZbgMPM7Z6vNVa",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.output;\n\n// Format news items as HTML\nconst newsHtml = data.topNews.map(item => \n  `<div style=\"margin-bottom: 20px;\">\n    <h3 style=\"margin: 0 0 8px 0; color: #667eea;\">\n      <a href=\"${item.link}\" style=\"color: #667eea; text-decoration: none;\">${item.title}</a>\n    </h3>\n    <p style=\"margin: 0; line-height: 1.6;\">${item.summary}</p>\n  </div>`\n).join('\\n');\n\n// Format events as HTML\nconst eventsHtml = data.events.map(item => \n  `<div style=\"margin-bottom: 20px;\">\n    <h3 style=\"margin: 0 0 8px 0; color: #667eea;\">\n      <a href=\"${item.link}\" style=\"color: #667eea; text-decoration: none;\">${item.title}</a>\n    </h3>\n    <p style=\"margin: 0 0 4px 0; font-size: 14px; color: #888;\"><strong>Date:</strong> ${item.date}</p>\n    <p style=\"margin: 0; line-height: 1.6;\">${item.summary}</p>\n  </div>`\n).join('\\n');\n\n// Format weather as HTML\nconst weatherHtml = `\n  <p style=\"margin: 0 0 10px 0; line-height: 1.6;\"><strong>Temperature:</strong> ${data.weather.temperature}</p>\n  <p style=\"margin: 0 0 10px 0; line-height: 1.6;\"><strong>Conditions:</strong> ${data.weather.conditions}</p>\n  <p style=\"margin: 0; line-height: 1.6;\">${data.weather.summary}</p>\n`;\n\nreturn {\n  introduction: data.introduction,\n  news: newsHtml,\n  events: eventsHtml,\n  weather: weatherHtml\n};"
+      },
+      "id": "d926927e-bb65-49df-8273-9f5c13e325ee",
+      "name": "Format for HTML Template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        2224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Denver News RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Denver Weather API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Denver News RSS": {
+      "main": [
+        [
+          {
+            "node": "Combine All Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Content": {
+      "main": [
+        [
+          {
+            "node": "Format Content Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Content Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Content": {
+      "main": [
+        [
+          {
+            "node": "Newsletter Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Newsletter Structure Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Newsletter Content Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Newsletter": {
+      "main": [
+        [
+          {
+            "node": "Send Newsletter Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Newsletter Content Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Denver Weather API": {
+      "main": [
+        [
+          {
+            "node": "Combine All Content",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Newsletter Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Format for HTML Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for HTML Template": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "648fc033-2b42-40d9-8bda-59d013a56a53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3a1c916ddcdecafb1a2450b9ef16e6590d05541a32306bf5a127eb19c2e31b65"
+  },
+  "id": "wTVUuerWRR4v1k8z",
+  "tags": []
+}
