@@ -1,0 +1,321 @@
+{
+  "name": "Executive SMS Knowledge Query",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingest-transcript",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        7888,
+        6408
+      ],
+      "id": "87a29ff7-498b-4188-a54a-da11130c89e4",
+      "name": "Trigger: Retell/Voice Webhook",
+      "webhookId": "70cb7a27-5c04-4bd3-89c8-7a5d50872e1c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t",
+              "name": "transcript",
+              "value": "={{ $json.body.transcript }}",
+              "type": "string"
+            },
+            {
+              "id": "p",
+              "name": "projectName",
+              "value": "={{ $json.body.project }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8112,
+        6408
+      ],
+      "id": "dd297670-0b45-4f6b-b30d-f8503cfe8eee",
+      "name": "Set: Clean Ingest Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.projectName + '\\n' + $json.transcript }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a meeting transcript summarizer. Create a concise summary highlighting: 1) Key discussion points, 2) Decisions made, 3) Action items, 4) Important dates or deadlines. Keep it under 300 words."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        8336,
+        6416
+      ],
+      "id": "2a9df3c2-2399-4fa5-934b-ae77cdde2ed9",
+      "name": "AI: Summarize Content"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        8304,
+        6608
+      ],
+      "id": "f980be7c-4803-4ede-96e9-46e56e0ce48a",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "NKcz01KQI1IbjGP6",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "executive-query",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        7888,
+        6840
+      ],
+      "id": "9802e119-205b-4ab5-874a-d593794cbe23",
+      "name": "Trigger: WhatsApp/SMS (Twilio)",
+      "webhookId": "5c8d9050-17d5-4d9c-83a4-3721be2e9d7f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q",
+              "name": "user_query",
+              "value": "={ $json.body.body.Body }",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8112,
+        6840
+      ],
+      "id": "31298983-d5ba-4c3d-a987-ed8e6a17c3fc",
+      "name": "Set: Clean Query"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        8304,
+        7056
+      ],
+      "id": "14b45986-a8b3-47d4-b040-0161b6aa08be",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "NKcz01KQI1IbjGP6",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "test_table",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "text",
+              "fieldValue": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8688,
+        6408
+      ],
+      "id": "9df6bb90-556e-4523-8862-62a0601cec23",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yIdqwT5KXh229IHw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Retrieves all meeting transcripts and summaries from the knowledge base. Use this to search for information about past meetings, projects, decisions, and action items. The tool returns all records - you must analyze them to find relevant information for the user query.",
+        "operation": "getAll",
+        "tableId": "test_table",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        8472,
+        7064
+      ],
+      "id": "243216e6-f6bc-4de8-8885-b8c78591513c",
+      "name": "Get a row in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yIdqwT5KXh229IHw",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Set: Clean Query').item.json.user_query }}",
+        "options": {
+          "systemMessage": "You are an Executive Assistant with access to a meeting knowledge base. When the user asks a question, use the Supabase tool to search for relevant meeting transcripts and summaries. Analyze ALL the records returned from the database to find information that answers the user's question. Provide a clear, concise answer based on the meeting data you find. If multiple meetings contain relevant information, synthesize the information across them. If no relevant information exists in the knowledge base, politely inform the user."
+        }
+      },
+      "id": "b81d371d-ecc9-44f9-a834-23b5dd9aed49",
+      "name": "AI Agent: Query Meeting Knowledge",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        8336,
+        6840
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set: Clean Ingest Data": {
+      "main": [
+        [
+          {
+            "node": "AI: Summarize Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Retell/Voice Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set: Clean Ingest Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: Summarize Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Summarize Content": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: WhatsApp/SMS (Twilio)": {
+      "main": [
+        [
+          {
+            "node": "Set: Clean Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Clean Query": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Query Meeting Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent: Query Meeting Knowledge",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row in Supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent: Query Meeting Knowledge",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b3af4ed4-6aa9-4bf9-8bcf-89f8d9625887",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "97beaf77344aceffcb577ad2e0e15a2bb98f05f01dd2193e176f983c54b350d8"
+  },
+  "id": "boUzWC5kuEzjvgKcTYFBk",
+  "tags": []
+}

@@ -1,7 +1,7 @@
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "https://excalidraw.com",
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
   "elements": [
     {
       "id": "72EFBU7kPX_eq3SfJ49BB",
@@ -196,7 +196,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "KFOtwY56X0ufVZDPxg9zz",
@@ -241,7 +242,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "5snbK6_LPkeCc-D_xxU27",
@@ -286,7 +288,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "Mho6hOQR7-3aArJfAlZk-",
@@ -331,7 +334,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "Ciu5ezIWQB_jRsg-QdipZ",
@@ -376,7 +380,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "cErmUOLNOzzZB6jMlpCv5",
@@ -636,7 +641,8 @@
       "endBinding": null,
       "startArrowhead": null,
       "endArrowhead": null,
-      "polygon": false
+      "polygon": false,
+      "lastCommittedPoint": null
     },
     {
       "id": "izB_AmcJnFqJF8EDhc96D",
@@ -806,11 +812,11 @@
       "index": "aN",
       "roundness": null,
       "seed": 1198108122,
-      "version": 144,
-      "versionNonce": 2008106676,
+      "version": 171,
+      "versionNonce": 138305427,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1767599189768,
+      "updated": 1767605283413,
       "link": null,
       "locked": false,
       "text": "* HTML Generator\n* Slack\n* Email\n* Database",
@@ -883,7 +889,7 @@
       "version": 98,
       "versionNonce": 1825043508,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1767598835596,
       "link": null,
       "locked": false,
@@ -902,8 +908,7 @@
     "gridSize": 20,
     "gridStep": 5,
     "gridModeEnabled": false,
-    "viewBackgroundColor": "#ffffff",
-    "lockedMultiSelections": {}
+    "viewBackgroundColor": "#ffffff"
   },
   "files": {}
 }
