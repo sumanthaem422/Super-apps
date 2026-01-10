@@ -1,0 +1,261 @@
+{
+  "name": "Cal.com Sales Booking Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cal-sales-booking",
+        "options": {}
+      },
+      "name": "Cal.com Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        320,
+        368
+      ],
+      "id": "eb9c7006-cd9c-4fe3-9189-ae65b5937c80",
+      "webhookId": "98ef715d-680a-4a77-b68e-30ad86f0e548"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "name",
+              "value": "={{ $json.body.attendees[0].name }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.attendees[0].email }}"
+            },
+            {
+              "name": "event",
+              "value": "={{ $json.body.triggerEvent }}"
+            },
+            {
+              "name": "start",
+              "value": "={{ $json.body.booking.startTime }}"
+            },
+            {
+              "name": "timezone",
+              "value": "={{ $json.body.attendees[0].timeZone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Booking Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        544,
+        368
+      ],
+      "id": "4cbb340f-74c1-45d9-8141-167bc7abb01a"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Define the list of free providers\nconst freeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];\n\n// Get all items from the previous node\nconst items = $input.all();\n\n// Map through each item to transform the data\nreturn items.map(item => {\n    // 1. Safely grab the email from the previous node's JSON\n    const email = item.json.email || \"\";\n    \n    // 2. Extract the domain (with a fallback if email is missing or invalid)\n    const domain = email.includes('@') ? email.split('@')[1].toLowerCase() : 'unknown';\n\n    // 3. Add the new properties to the JSON object\n    // Business if: not in the free list AND not 'unknown'\n    item.json.isBusiness = !freeDomains.includes(domain) && domain !== 'unknown';\n    item.json.domain = domain;\n\n    return item;\n});"
+      },
+      "name": "Detect Business Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        768,
+        368
+      ],
+      "id": "4f48eb61-dca9-48e7-91cf-e58f9816e12d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.isBusiness}}"
+            }
+          ]
+        }
+      },
+      "name": "Business Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        336,
+        560
+      ],
+      "id": "afe25543-2939-41da-a3fd-f84c3612e839"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "leadId",
+              "value": "={{ \"LEAD-\" + $now.format(\"yyyyMMdd\") + \"-\" + Math.floor(Math.random() * 10000) }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "domain",
+              "value": "={{ $json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "callScheduled",
+              "value": "={{ $json.start }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "timezone",
+              "value": "={{ $json.timezone }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "status",
+              "value": "New Lead",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "source",
+              "value": "Cal.com Booking",
+              "type": "string"
+            },
+            {
+              "id": "id-9",
+              "name": "createdAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-10",
+              "name": "assignedTo",
+              "value": "Sales Team",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "198d5f3a-7d02-4244-ba40-06067d6e3631",
+      "name": "Create Lead (Dummy Data)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.leadId }}",
+        "message": "=Hi {{$json.name}},\n\nThanks for booking a call with us!\n\nCall details:\n{{ $json.callScheduled }} ({{$json.timezone}})\n\nLooking forward to speaking with you.\n\n– Sales Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        560
+      ],
+      "id": "900183d6-44f6-4f54-bf28-6927453a6f72",
+      "name": "Send a message",
+      "webhookId": "d94128bd-f19c-4d60-86a5-78274838b945",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NjOWtvqF4Hr4qkEW",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cal.com Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Booking Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Booking Data": {
+      "main": [
+        [
+          {
+            "node": "Detect Business Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Business Email": {
+      "main": [
+        [
+          {
+            "node": "Business Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Email?": {
+      "main": [
+        [
+          {
+            "node": "Create Lead (Dummy Data)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead (Dummy Data)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "4846ed21-5c31-4899-8402-d3ec4ae54392",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "97beaf77344aceffcb577ad2e0e15a2bb98f05f01dd2193e176f983c54b350d8"
+  },
+  "id": "ijI8PBvxRTaAjbV1vB2On",
+  "tags": []
+}

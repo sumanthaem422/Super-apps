@@ -1,0 +1,313 @@
+{
+  "name": "AI Voice Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar_slots",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "49679199-8366-492f-ba29-4c99435fb58d",
+      "name": "calendar_slots",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -48
+      ],
+      "webhookId": "b78bf447-b269-4106-a500-2f3421f7d9d8"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar_availability",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6d0cbd4a-d8f5-4f18-8359-a1de3d6c69bd",
+      "name": "calendar_availability",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        160
+      ],
+      "webhookId": "715c67c6-f973-4fdd-886d-19d6cd6aac1b"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "babunaveen888@gmail.com",
+          "mode": "list",
+          "cachedResultName": "babunaveen888@gmail.com"
+        },
+        "timeMin": "={{ $today }}",
+        "timeMax": "={{ $now }}",
+        "options": {}
+      },
+      "id": "7e6ed9f5-72ec-4ef3-ad84-7d78aeac5ed5",
+      "name": "Get availability in a calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        272,
+        160
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xs4NV629cGQnXAWy",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar_set_appointment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0cb64fd7-8e2b-47dd-b04f-27aca850ff8b",
+      "name": "calendar_set_appointment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        352
+      ],
+      "webhookId": "e74da561-7cda-43da-866f-43dde7aebd33"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "babunaveen888@gmail.com",
+          "mode": "list",
+          "cachedResultName": "babunaveen888@gmail.com"
+        },
+        "start": "={{ $today }}",
+        "end": "={{ $now }}",
+        "additionalFields": {}
+      },
+      "id": "70177ab2-7cd5-4c91-ae09-339baff048b3",
+      "name": "Create an event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        272,
+        352
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xs4NV629cGQnXAWy",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -48
+      ],
+      "id": "cd07ac57-4b62-47b0-88a6-4a79c6d381e7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $('calendar_set_appointment').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"status is {{ $json.status }}\"\n        }\n    ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        -48
+      ],
+      "id": "644f7187-547c-4f42-887f-1f27ab38c02d",
+      "name": "Respond to Calendar open slots"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $('calendar_set_appointment').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"status is {{ $json.status }}\"\n        }\n    ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        160
+      ],
+      "id": "10f8a5b7-3dc4-4879-b3e3-757572066a1a",
+      "name": "Respond to is date available"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n    \"results\":[\n        {\n            \"toolCallId\":\"{{ $('calendar_set_appointment').item.json.body.message.toolCalls[0].id }}\",\n            \"result\": \"status is {{ $json.status }}\"\n        }\n    ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        352
+      ],
+      "id": "2fa0b285-e526-4628-84b3-a9a4a8f2fb55",
+      "name": "Respond to is created appointment"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -48
+      ],
+      "id": "0d6d3124-d570-4f61-a299-8d0706940309",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "babunaveen888@gmail.com",
+          "mode": "list",
+          "cachedResultName": "babunaveen888@gmail.com"
+        },
+        "start": "={{ $today }}",
+        "end": "={{ $now }}",
+        "additionalFields": {}
+      },
+      "id": "4ec0c91f-31ca-49a7-9e50-d028343aba56",
+      "name": "Create an event1",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -48
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xs4NV629cGQnXAWy",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "calendar_slots": {
+      "main": [
+        [
+          {
+            "node": "Create an event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calendar_availability": {
+      "main": [
+        [
+          {
+            "node": "Get availability in a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calendar_set_appointment": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar": {
+      "main": [
+        [
+          {
+            "node": "Respond to is date available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Respond to is created appointment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Calendar open slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "9449578b-6cca-48c9-8f31-a7903b32d927",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "237f5b72367c3bbbb68912bac64da36044168f0c04e5c529c8c46b46abedcf41"
+  },
+  "id": "rFwMCcuJL8XpEdLy",
+  "tags": []
+}

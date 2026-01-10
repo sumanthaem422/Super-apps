@@ -1,0 +1,163 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-agent-orchestrator",
+        "options": {}
+      },
+      "id": "b6d06d3f-8046-4381-880b-af2b02a923c2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        -16
+      ],
+      "webhookId": "0705c5e6-3a85-4860-8448-9c5246bf31aa"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant"
+        }
+      },
+      "id": "d127d1b5-1634-466a-bf96-79f4845af654",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        1648,
+        -16
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "00766ec4-8a9c-447a-97a4-a04593bc8ada",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body\n\nreturn [\n  {\n    json: {\n      chatInput: payload?.message?.transcript || \"Hello\",\n      sessionId: payload?.message?.call?.id || \"default-session\",\n      customerName: payload?.message?.call?.customer?.name || \"Roger\",\n    },\n  },\n];\n"
+      },
+      "id": "d80de0cc-d7a4-481f-9d05-ee98afdb2b08",
+      "name": "Format for Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "84a2a64e-2023-4ff6-983a-b4d9607c96f9",
+      "name": "Respond to Voice Provider",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        192
+      ],
+      "id": "35c4ec52-745d-43ca-8b7c-e235142d44e0",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "NKcz01KQI1IbjGP6",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format for Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Voice Provider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "9977145d-ee27-46a9-9399-7abecc7ee7b0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "97beaf77344aceffcb577ad2e0e15a2bb98f05f01dd2193e176f983c54b350d8"
+  },
+  "id": "GqxItlIdTpcPNFV_YbwXl",
+  "tags": []
+}
