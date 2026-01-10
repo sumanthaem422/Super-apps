@@ -1,0 +1,946 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "retell-tool-call",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook: Retell Tool Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2192,
+        320
+      ],
+      "id": "9a78bd05-d117-4160-a3cf-ff6c3dfcc9e3",
+      "webhookId": "a69aaedd-c7f5-4897-99cc-8f078e7af07c"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "check_availability"
+            },
+            {
+              "value2": "book_appointment",
+              "output": 1
+            },
+            {
+              "value2": "hubspot_lookup",
+              "output": 2
+            },
+            {
+              "value2": "send_sms",
+              "output": 3
+            }
+          ]
+        }
+      },
+      "name": "Switch: Tool Logic",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        288
+      ],
+      "id": "f6cf1fa3-88de-4d89-b1ac-c6028a6dd573"
+    },
+    {
+      "parameters": {
+        "url": "https://api.cal.com/v2/slots/available",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "calApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "startTime",
+              "value": "={{ $json.body.tool_call.arguments.start_date }}"
+            },
+            {
+              "name": "endTime",
+              "value": "={{ $json.body.tool_call.arguments.end_date }}"
+            },
+            {
+              "name": "eventTypeId",
+              "value": "={{ $json.body.tool_call.arguments.event_type_id || '1' }}"
+            },
+            {
+              "name": "duration",
+              "value": "60"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Cal.com: Get Slots",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        288,
+        0
+      ],
+      "id": "8d044310-f667-4cfd-ac32-39c584024ba3",
+      "credentials": {
+        "calApi": {
+          "id": "uTPlIFsbCIFwei8B",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cal.com/v2/bookings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "calApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "start",
+              "value": "={{ $json.body.tool_call.arguments.start_time }}"
+            },
+            {
+              "name": "eventTypeId",
+              "value": "={{ $json.body.tool_call.arguments.event_type_id }}"
+            },
+            {
+              "name": "attendee",
+              "value": "={{ { name: $json.body.tool_call.arguments.customer_name, email: $json.body.tool_call.arguments.customer_email, phoneNumber: $json.body.tool_call.arguments.customer_phone } }}"
+            },
+            {
+              "name": "metadata",
+              "value": "={{ { service_type: $json.body.tool_call.arguments.service_type, is_emergency: $json.body.tool_call.arguments.is_emergency || false, notes: $json.body.tool_call.arguments.notes || '' } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Cal.com: Book",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        288,
+        192
+      ],
+      "id": "09164d0f-4a35-40a4-a44a-e31b31ef249c",
+      "credentials": {
+        "calApi": {
+          "id": "uTPlIFsbCIFwei8B",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "contact",
+        "operation": "search",
+        "limit": 1,
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "phone",
+                    "value": "={{ $json.body.tool_call.arguments.phone_number }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "properties": [
+            "firstname",
+            "lastname",
+            "email",
+            "phone",
+            "hs_lead_status",
+            "lifecyclestage",
+            "notes_last_contacted"
+          ]
+        }
+      },
+      "name": "HubSpot: Lookup",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 1,
+      "position": [
+        64,
+        336
+      ],
+      "id": "8aff459a-eb3d-4d0c-98e1-e29bac04c66b",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "W1W77a5mz20aELSx",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "tool_call_id",
+              "value": "={{ $('Webhook: Retell Tool Call').item.json.body.tool_call.id }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "result",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "id-3",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set: Format Retell",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        336
+      ],
+      "id": "c00440f6-6f3d-407a-a62f-aa69e7a03390"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Retell",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        736,
+        336
+      ],
+      "id": "14351df5-4c6a-4d0b-9478-5a8b26009442"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "service_interest",
+                "value": "={{ $json.service_type }}"
+              },
+              {
+                "property": "notes_last_contacted",
+                "value": "={{ $now.toISO() }}"
+              }
+            ]
+          },
+          "firstName": "={{ $json.firstname }}",
+          "lastName": "={{ $json.lastname }}",
+          "leadStatus": "={{ $json.lead_status || 'NEW' }}",
+          "lifeCycleStage": "={{ $json.is_emergency ? 'opportunity' : 'lead' }}",
+          "phoneNumber": "={{ $json.phone }}"
+        },
+        "options": {}
+      },
+      "id": "3f2aca0b-a372-472d-ab72-965d11b866ea",
+      "name": "HubSpot: Create/Update Contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        -608,
+        928
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "W1W77a5mz20aELSx",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "deal",
+        "stage": "={{ $json.is_emergency ? 'appointmentscheduled' : 'qualifiedtobuy' }}",
+        "additionalFields": {
+          "amount": "={{ $json.estimated_value || 0 }}",
+          "associatedVids": "={{ [$('HubSpot: Create/Update Contact').item.json.id] }}",
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "service_type",
+                "value": "={{ $json.service_type }}"
+              },
+              {
+                "property": "is_emergency",
+                "value": "={{ $json.is_emergency }}"
+              },
+              {
+                "property": "appointment_date",
+                "value": "={{ $json.appointment_date }}"
+              }
+            ]
+          },
+          "dealName": "={{ $json.service_type + ' - ' + $json.customer_name }}",
+          "pipeline": "default"
+        }
+      },
+      "id": "990609c7-d03f-4c6f-93ed-7fe9487a32ce",
+      "name": "HubSpot: Create Deal",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        928
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "W1W77a5mz20aELSx",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "engagement",
+        "type": "call",
+        "metadata": {
+          "body": "={{ 'AI Receptionist Call Summary:\\n\\nService Type: ' + $json.service_type + '\\nEmergency: ' + ($json.is_emergency ? 'Yes' : 'No') + '\\nQualification Score: ' + $json.qualification_score + '\\nNotes: ' + $json.call_notes + '\\nAppointment: ' + ($json.appointment_booked ? 'Booked for ' + $json.appointment_date : 'Not booked') }}",
+          "status": "COMPLETED"
+        },
+        "additionalFields": {
+          "associations": {
+            "contactIds": "={{ $('HubSpot: Create/Update Contact').item.json.id }}",
+            "dealIds": "={{ $('HubSpot: Create Deal').item.json.id }}"
+          }
+        }
+      },
+      "id": "eee4fb7d-c392-4da3-b846-690e36a541d0",
+      "name": "HubSpot: Log Call Activity",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        928
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "W1W77a5mz20aELSx",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "to_number",
+              "value": "={{ $json.customer_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "from_number",
+              "value": "={{ $json.business_phone || '+1XXXXXXXXXX' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "message_text",
+              "value": "={{ $json.is_emergency ? 'URGENT: Your emergency HVAC service request has been received. A technician will contact you within 30 minutes. Confirmation #' + $json.booking_id : 'Thank you for scheduling with us! Your ' + $json.service_type + ' appointment is confirmed for ' + $json.appointment_date + '. We\\'ll send a reminder 24 hours before. Reply STOP to opt out.' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "messaging_profile_id",
+              "value": "={{ $json.messaging_profile_id || 'YOUR_MESSAGING_PROFILE_ID' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e9c2fa8c-8f0f-4cf3-a5ed-d412a159fe2e",
+      "name": "Set: Prepare SMS Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "email",
+              "value": "={{ $json.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "firstname",
+              "value": "={{ $json.customer_name.split(' ')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "lastname",
+              "value": "={{ $json.customer_name.split(' ').slice(1).join(' ') || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "phone",
+              "value": "={{ $json.customer_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "service_type",
+              "value": "={{ $json.service_type }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "is_emergency",
+              "value": "={{ $json.is_emergency }}",
+              "type": "boolean"
+            },
+            {
+              "id": "id-7",
+              "name": "lead_status",
+              "value": "={{ $json.qualification_score >= 7 ? 'QUALIFIED' : 'NEW' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "estimated_value",
+              "value": "={{ $json.estimated_value }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b72c3684-2f20-4846-aa2a-7d18496b1bbf",
+      "name": "Set: Prepare HubSpot Contact",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "service_type",
+              "value": "={{ $json.service_type }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "is_emergency",
+              "value": "={{ $json.is_emergency }}",
+              "type": "boolean"
+            },
+            {
+              "id": "id-4",
+              "name": "estimated_value",
+              "value": "={{ $json.estimated_value }}",
+              "type": "number"
+            },
+            {
+              "id": "id-5",
+              "name": "appointment_date",
+              "value": "={{ $json.appointment_date }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "qualification_score",
+              "value": "={{ $json.qualification_score }}",
+              "type": "number"
+            },
+            {
+              "id": "id-7",
+              "name": "call_notes",
+              "value": "={{ $json.call_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ebeae9b5-8f20-4303-b3b3-53e3ae1eb93b",
+      "name": "Set: Prepare Deal Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const toolCall = $input.item.json.body.tool_call;\nconst args = toolCall.arguments;\n\n// HVAC-specific business logic\nconst hvacServices = {\n  'emergency_repair': { priority: 'urgent', estimatedValue: 500, responseTime: '30 minutes' },\n  'ac_repair': { priority: 'high', estimatedValue: 350, responseTime: '4 hours' },\n  'heating_repair': { priority: 'high', estimatedValue: 400, responseTime: '4 hours' },\n  'maintenance': { priority: 'normal', estimatedValue: 150, responseTime: '2 days' },\n  'installation': { priority: 'normal', estimatedValue: 5000, responseTime: '1 week' },\n  'inspection': { priority: 'low', estimatedValue: 100, responseTime: '3 days' }\n};\n\nconst serviceType = args.service_type || 'general_inquiry';\nconst serviceInfo = hvacServices[serviceType] || { priority: 'normal', estimatedValue: 200, responseTime: '1 day' };\n\n// Determine if emergency based on keywords\nconst emergencyKeywords = ['emergency', 'urgent', 'no heat', 'no cooling', 'leak', 'flooding', 'gas smell'];\nconst isEmergency = args.is_emergency || emergencyKeywords.some(keyword => \n  (args.description || '').toLowerCase().includes(keyword)\n);\n\n// Calculate qualification score (1-10)\nlet qualificationScore = 5;\nif (isEmergency) qualificationScore += 3;\nif (args.customer_email) qualificationScore += 1;\nif (args.property_type === 'commercial') qualificationScore += 1;\nif (serviceInfo.estimatedValue > 1000) qualificationScore += 1;\n\nreturn {\n  json: {\n    service_type: serviceType,\n    is_emergency: isEmergency,\n    priority: serviceInfo.priority,\n    estimated_value: serviceInfo.estimatedValue,\n    response_time: serviceInfo.responseTime,\n    qualification_score: Math.min(qualificationScore, 10),\n    customer_name: args.customer_name,\n    customer_phone: args.customer_phone,\n    customer_email: args.customer_email,\n    description: args.description,\n    property_type: args.property_type || 'residential',\n    call_summary: `${serviceType} request - ${isEmergency ? 'EMERGENCY' : 'Standard'} - Score: ${qualificationScore}/10`\n  }\n};"
+      },
+      "id": "62c79514-e0bb-49a8-8634-8f764f84605b",
+      "name": "Code: HVAC Business Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1744,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.is_emergency }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1ccc9ec4-b638-4e89-bdb5-2ae45eeb25ad",
+      "name": "IF: Is Emergency Service",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1056,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "2e0cc303-d59d-47cc-88f5-970f0965b76d",
+      "name": "Merge: Combine CRM Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        288,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI lead qualification assistant for an HVAC business. Analyze the customer information and conversation context to extract structured data.\n\nCustomer Input: {{ $json.description }}\n\nExtract and structure the following:\n- Service type (emergency_repair, ac_repair, heating_repair, maintenance, installation, inspection)\n- Urgency level\n- Customer contact details\n- Property information\n- Budget indicators\n\nProvide a qualification score (1-10) based on:\n- Urgency and need\n- Budget readiness\n- Contact completeness\n- Service value potential",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a professional HVAC lead qualification AI. Be thorough, accurate, and focus on extracting actionable business intelligence from customer conversations."
+        }
+      },
+      "id": "6fbdb91a-867b-4eb7-8256-4a5b153101b0",
+      "name": "AI Agent: Lead Qualifier",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1472,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "sessionKey": "={{ $('Webhook: Retell Tool Call').item.json.body.call_id || 'default_session' }}",
+        "contextWindowLength": 10
+      },
+      "id": "92810610-ca53-4188-8a52-826687f0cdd2",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1392,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"service_type\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Type of HVAC service requested\"\n\t\t},\n\t\t\"is_emergency\": {\n\t\t\t\"type\": \"boolean\",\n\t\t\t\"description\": \"Whether this is an emergency service call\"\n\t\t},\n\t\t\"customer_name\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Full name of the customer\"\n\t\t},\n\t\t\"customer_phone\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Customer phone number\"\n\t\t},\n\t\t\"customer_email\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"Customer email address\"\n\t\t},\n\t\t\"qualification_score\": {\n\t\t\t\"type\": \"number\",\n\t\t\t\"description\": \"Lead qualification score from 1-10\"\n\t\t},\n\t\t\"estimated_value\": {\n\t\t\t\"type\": \"number\",\n\t\t\t\"description\": \"Estimated service value in dollars\"\n\t\t},\n\t\t\"property_type\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"residential or commercial\"\n\t\t}\n\t}\n}"
+      },
+      "id": "c44fa817-1e9a-4c04-95a5-045b3a465710",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1264,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        1152
+      ],
+      "id": "e759c872-f2a1-499a-9015-74d07264264f",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "NKcz01KQI1IbjGP6",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        64,
+        672
+      ],
+      "id": "9c000842-c832-4e67-b6e5-4aa7ef8ac3bc",
+      "name": "Send email",
+      "webhookId": "1982b6b8-e399-4231-9aba-a7b91c013bd2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Retell Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Switch: Tool Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Tool Logic": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cal.com: Get Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cal.com: Book",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HubSpot: Lookup",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: HVAC Business Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cal.com: Get Slots": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cal.com: Book": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot: Lookup": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Retell",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge: Combine CRM Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Set: Format Retell": {
+      "main": [
+        [
+          {
+            "node": "Respond to Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Prepare SMS Data": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: HVAC Business Logic": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Lead Qualifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Lead Qualifier": {
+      "main": [
+        [
+          {
+            "node": "IF: Is Emergency Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Is Emergency Service": {
+      "main": [
+        [
+          {
+            "node": "Set: Prepare HubSpot Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: Prepare HubSpot Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Prepare HubSpot Contact": {
+      "main": [
+        [
+          {
+            "node": "HubSpot: Create/Update Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot: Create/Update Contact": {
+      "main": [
+        [
+          {
+            "node": "Set: Prepare Deal Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Prepare Deal Data": {
+      "main": [
+        [
+          {
+            "node": "HubSpot: Create Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot: Create Deal": {
+      "main": [
+        [
+          {
+            "node": "HubSpot: Log Call Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot: Log Call Activity": {
+      "main": [
+        [
+          {
+            "node": "Merge: Combine CRM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge: Combine CRM Data": {
+      "main": [
+        [
+          {
+            "node": "Set: Format Retell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent: Lead Qualifier",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent: Lead Qualifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent: Lead Qualifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Set: Prepare SMS Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "ef6d547d-61c1-4460-b7c0-77ea187a8d1c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "97beaf77344aceffcb577ad2e0e15a2bb98f05f01dd2193e176f983c54b350d8"
+  },
+  "id": "yHtLYQ4adLaErJPWBzTYh",
+  "tags": []
+}
