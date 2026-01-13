@@ -1,0 +1,436 @@
+{
+  "name": "Update Database",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1033155-e2fa-4c0a-bc1c-198044cd3c5e",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "dca07d6e-cc77-40bd-a28c-16c00a215e81",
+      "name": "Get Content",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -208,
+        80
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2GXtmPTVZiEOlJK2",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2a4312a0-914d-446b-a6d0-d34d2d2c43dc",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "id": "48d20835-3345-4cd0-8e3e-b1374047eb4b",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        288,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f7b2bf8d-1d4e-481b-9086-2ea03ce04233",
+      "name": "Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        288,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "sample",
+          "mode": "list",
+          "cachedResultName": "sample"
+        },
+        "options": {
+          "pineconeNamespace": "RAG"
+        }
+      },
+      "id": "306bec25-2272-4b77-9125-72df00c55f44",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        224,
+        80
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "lmwnvPYEr7Gnua5w",
+          "name": "PineconeApi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        176,
+        272
+      ],
+      "id": "a8cd1f97-5b71-4040-91f9-a0b008c1ab6b",
+      "name": "Embeddings HuggingFace Inference",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "Zz5zC7zFyXMpUZhE",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "196h_KWQYQEnaJd_nC3FfctVMydU2BEz6",
+            "mode": "list",
+            "cachedResultName": "RAG",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/196h_KWQYQEnaJd_nC3FfctVMydU2BEz6"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -448,
+        80
+      ],
+      "id": "6c06f1f7-223b-4407-b965-e142ab32c8c8",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "2GXtmPTVZiEOlJK2",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi! 👋 I'm your Spice Haven Bistro Assistant. I have access to all 14 documents in our knowledge base including menu items, pricing, hours, policies, and more. What would you like to know?",
+        "availableInChat": true,
+        "agentName": "Spice Haven Bistro Assistant",
+        "agentDescription": "AI assistant with access to complete restaurant information including menu, pricing, hours, and policies stored in Pinecone vector database",
+        "options": {}
+      },
+      "id": "a2c073a9-e6fb-41e8-88f7-9f8d6a6b0585",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        880,
+        80
+      ],
+      "webhookId": "71513f3e-bd0c-40a1-b566-c04ed3c2ecfc"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful restaurant assistant with access to a comprehensive knowledge base containing 14 documents about Spice Haven Bistro. When answering questions:\n\n• Use the restaurant_knowledge_base tool to search for information\n• The tool retrieves the top 10 most relevant documents from the vector store\n• Provide detailed, accurate information from the retrieved documents\n• If information spans multiple documents, synthesize the information coherently\n• Always cite or reference the source when providing specific details\n• If the information is not found in the first search, try rephrasing your query once more\n• If still not found after 2 attempts, clearly state that the information is not available in the knowledge base\n• Be conversational and helpful in your responses\n\nYour goal is to provide complete and accurate answers using all available knowledge from the 14 documents stored in Pinecone.",
+          "maxIterations": 20
+        }
+      },
+      "id": "b8c30f03-e25a-4b3f-a636-9954b46dcb6a",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1120,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "2f3ad892-2f2e-482e-b6ef-a150acfe9a1f",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        976,
+        288
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "rqTZbgMPM7Z6vNVa",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "718902cc-a8e0-4cb3-89e6-526454b8d81d",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Work with the data in pinecone vector",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "sample",
+          "mode": "list"
+        },
+        "topK": 14,
+        "includeDocumentMetadata": false,
+        "options": {
+          "pineconeNamespace": "RAG"
+        }
+      },
+      "id": "caa03853-b606-4e04-b10f-f92502be2a90",
+      "name": "Pinecone Vector Store1",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        288
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "lmwnvPYEr7Gnua5w",
+          "name": "PineconeApi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        480
+      ],
+      "id": "9083c186-40be-40d3-89f0-c15c7fbef065",
+      "name": "Embeddings HuggingFace Inference1",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "Zz5zC7zFyXMpUZhE",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Content": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Get Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "80f4121a-a292-4d72-a6cc-91aa7616d3d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3a1c916ddcdecafb1a2450b9ef16e6590d05541a32306bf5a127eb19c2e31b65"
+  },
+  "id": "pEuoIW4vpB5tJt0W",
+  "tags": []
+}
