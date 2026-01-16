@@ -1,0 +1,490 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "148a9c2e-c857-4f57-b6cc-d620337cc862",
+      "name": "Config | Workflow Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        -2976,
+        2448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://ip-api.com/json/' + $('Config | Workflow Settings').item.json.ip }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {},
+          "timeout": 10000
+        }
+      },
+      "id": "57875200-a5a3-4117-b58f-d191c5d8951f",
+      "name": "Enrichment | Geo IP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2752,
+        2448
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are analyzing a luxury real estate lead for Dolce Residences in Tivat, Montenegro. Evaluate the following lead data and provide a comprehensive scoring assessment.\n\nLead Information:\n- Name: {{ $('Config | Workflow Settings').item.json.name }}\n- Email: {{ $('Config | Workflow Settings').item.json.email }}\n- Phone: {{ $('Config | Workflow Settings').item.json.phone }}\n- Country: {{ $('Config | Workflow Settings').item.json.country }}\n- Budget: {{ $('Config | Workflow Settings').item.json.budget }}\n- Message: {{ $('Config | Workflow Settings').item.json.message }}\n- Location: {{ $('Enrichment | Geo IP').item.json.city }}, {{ $('Enrichment | Geo IP').item.json.country }}\n- Timezone: {{ $('Enrichment | Geo IP').item.json.timezone }}\n\nScoring Criteria:\n\nHOT LEAD (Score 80-100, Category 1):\n- Budget €1.5M+ clearly stated\n- From target markets (Netherlands, Germany, Switzerland, UK)\n- Message shows immediate purchase intent or urgency (\"ready to buy\", \"looking to close soon\", \"visiting next week\")\n- Specific questions about property details, financing, or legal process\n- Investment or lifestyle buyer with clear timeline\n\nWARM LEAD (Score 50-79, Category 2):\n- Budget €800K-€1.5M or vague budget indication\n- From target or adjacent markets\n- General interest expressed but no immediate urgency\n- Asking exploratory questions\n- Considering multiple options or doing research\n- Timeline mentioned but flexible (\"next few months\", \"this year\")\n\nCOLD LEAD (Score 0-49, Category 3):\n- Budget below €800K or not specified\n- From non-target markets\n- Generic inquiry with minimal detail\n- No clear timeline or intent\n- Just browsing or information gathering\n- Vague message like \"tell me more\" without specifics\n\nCRITICAL: Return leadScore as a number (e.g., 85, not \"85\") and leadCategory as a number (1, 2, or 3, not \"1\", \"2\", or \"3\").\n\nProvide:\n- leadScore: Numerical score 0-100\n- leadCategory: 1 (Hot), 2 (Warm), or 3 (Cold)\n- buyerType: investor, lifestyle, or mixed\n- urgencyLevel: high, medium, or low\n- qualificationNotes: Detailed reasoning for the score and category\n- recommendedAction: immediate_call, schedule_followup, email_nurture, or low_priority",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert luxury real estate lead qualification AI for Dolce Residences - 5 exclusive villas in Tivat, Montenegro with private pools, 200m from the sea, priced €1.5M-€3M. You analyze lead data using multiple signals: budget alignment, geographic targeting (DACH region + UK + Netherlands priority), message intent analysis, urgency indicators, and buyer psychology. You provide precise numerical scoring (0-100) and categorical classification (Hot/Warm/Cold) with detailed justification based on the lead's likelihood to convert within 90 days."
+        }
+      },
+      "id": "39ac3ae7-f76a-44b3-8e8e-05d1ad203b82",
+      "name": "AI | Lead Qualification Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -2528,
+        2448
+      ]
+    },
+    {
+      "parameters": {
+        "value1": "={{ $json.output.leadCategory }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "equal",
+              "value2": 1,
+              "outputKey": "Hot Lead"
+            },
+            {
+              "operation": "equal",
+              "value2": 2,
+              "outputKey": "Warm Lead"
+            },
+            {
+              "operation": "equal",
+              "value2": 3,
+              "outputKey": "Cold Lead"
+            }
+          ]
+        },
+        "fallbackOutput": "2"
+      },
+      "id": "30cf8b8f-b808-4c2a-8b90-15380b0b5c6e",
+      "name": "Orchestration | Lead Routing",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [
+        -2176,
+        2432
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokensToSample": 1024,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -2528,
+        2672
+      ],
+      "id": "468bc005-da0e-43f3-97c3-680a2b41dbf5",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "d8SaQpdXqwqcR9Ac",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"leadScore\": 85,\n  \"leadCategory\": 1,\n  \"buyerType\": \"investor\",\n  \"urgencyLevel\": \"high\",\n  \"qualificationNotes\": \"Strong investor profile from target market with clear budget alignment and immediate intent signals\",\n  \"recommendedAction\": \"immediate_call\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -2400,
+        2672
+      ],
+      "id": "4ebfdcb4-5110-47d5-8495-b0927950873a",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "dtharunsai888@gmail.com",
+        "subject": "={{ '🔔 New ' + (['Hot Lead 🔥', 'Warm Lead ⚡', 'Cold Lead ❄️'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'Lead') + ' - ' + $('Config | Workflow Settings').item.json.name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n<style>\nbody { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n.container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }\n.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n.header h1 { margin: 0; font-size: 28px; }\n.badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-top: 10px; }\n.hot { background-color: #ff4444; }\n.warm { background-color: #ffaa00; }\n.cold { background-color: #4a90e2; }\n.content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n.section { margin-bottom: 25px; }\n.section h2 { color: #667eea; font-size: 18px; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }\n.info-row { display: flex; margin-bottom: 10px; }\n.label { font-weight: bold; min-width: 150px; color: #666; }\n.value { color: #333; }\n.score-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }\n.score-box .score { font-size: 48px; font-weight: bold; }\n.score-box .label { color: white; font-size: 14px; }\n.action-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }\n.action-box strong { color: #856404; }\n.footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"header\">\n<h1>🏡 Dolce Residences</h1>\n<h2>New Lead Notification</h2>\n<span class=\"badge {{ ['hot', 'warm', 'cold'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'cold' }}\">\n{{ ['🔥 HOT LEAD', '⚡ WARM LEAD', '❄️ COLD LEAD'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] || 'LEAD' }}\n</span>\n</div>\n\n<div class=\"content\">\n<div class=\"score-box\">\n<div class=\"score\">{{ $('AI | Lead Qualification Agent').item.json.output.leadScore || 0 }}/100</div>\n<div class=\"label\">LEAD SCORE</div>\n</div>\n\n<div class=\"section\">\n<h2>👤 Contact Information</h2>\n<div class=\"info-row\">\n<span class=\"label\">Name:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.name || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Email:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.email || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Phone:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.phone || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Country:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.country || 'N/A' }}</span>\n</div>\n</div>\n\n<div class=\"section\">\n<h2>💰 Lead Details</h2>\n<div class=\"info-row\">\n<span class=\"label\">Budget:</span>\n<span class=\"value\">{{ $('Config | Workflow Settings').item.json.budget || 'Not specified' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Buyer Type:</span>\n<span class=\"value\">{{ $('AI | Lead Qualification Agent').item.json.output.buyerType || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">Urgency Level:</span>\n<span class=\"value\">{{ $('AI | Lead Qualification Agent').item.json.output.urgencyLevel || 'N/A' }}</span>\n</div>\n<div class=\"info-row\">\n<span class=\"label\">IP Location:</span>\n<span class=\"value\">{{ $('Enrichment | Geo IP').item.json.city || 'Unknown' }}, {{ $('Enrichment | Geo IP').item.json.country || 'Unknown' }}</span>\n</div>\n</div>\n\n<div class=\"section\">\n<h2>💬 Message</h2>\n<p style=\"background: #f5f5f5; padding: 15px; border-radius: 5px; font-style: italic;\">\n{{ $('Config | Workflow Settings').item.json.message || 'No message provided' }}\n</p>\n</div>\n\n<div class=\"action-box\">\n<strong>🎯 Recommended Action:</strong> {{ $('AI | Lead Qualification Agent').item.json.output.recommendedAction || 'Review required' }}\n</div>\n\n<div class=\"section\">\n<h2>📊 Qualification Notes</h2>\n<p>{{ $('AI | Lead Qualification Agent').item.json.output.qualificationNotes || 'No notes available' }}</p>\n</div>\n\n<div class=\"footer\">\n<p>⏰ Received: {{ $now.toLocaleString() }}</p>\n<p>Dolce Residences - Luxury Villas in Tivat, Montenegro</p>\n</div>\n</div>\n</div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1856,
+        2768
+      ],
+      "id": "7650a4cc-697e-4f65-9e30-4a8aa7c55e5b",
+      "name": "Send a message",
+      "webhookId": "8d50bf49-c372-4fb9-944d-c330db170746",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GJWqXEV5Eyjo43Q0",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Dolce Residences - Luxury Villa Inquiry",
+        "formDescription": "Discover your dream luxury villa in Tivat, Montenegro. Fill out the form below and our team will contact you shortly.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "fieldName": "name",
+              "placeholder": "Enter your full name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email",
+              "fieldName": "email",
+              "placeholder": "you@example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone Number",
+              "fieldType": "number",
+              "fieldName": "phone",
+              "placeholder": "+91 1234567899",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Country of Residence",
+              "fieldName": "country",
+              "placeholder": "United Kingdom, Germany, Switzerland",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Estimated Budget",
+              "fieldName": "budget",
+              "placeholder": "e.g. €1.5M – €3M",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Message / Purchase Intent",
+              "fieldType": "textarea",
+              "fieldName": "message",
+              "placeholder": "Tell us what you are looking for (investment, lifestyle, urgency, etc."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -3200,
+        2448
+      ],
+      "id": "5667d147-8ec2-42f6-a604-271498b207e3",
+      "name": "On form submission",
+      "webhookId": "92cb1e21-fc0e-4445-81e2-63d1b38bf372"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are generating a personalized follow-up email for a {{ ['HOT', 'WARM', 'COLD'][$('AI | Lead Qualification Agent').item.json.output.leadCategory - 1] }} lead for Dolce Residences luxury villas.\n\nLead Information:\n- Name: {{ $('Config | Workflow Settings').item.json.name }}\n- Email: {{ $('Config | Workflow Settings').item.json.email }}\n- Country: {{ $('Config | Workflow Settings').item.json.country }}\n- Budget: {{ $('Config | Workflow Settings').item.json.budget }}\n- Lead Score: {{ $('AI | Lead Qualification Agent').item.json.output.leadScore }}\n- Buyer Type: {{ $('AI | Lead Qualification Agent').item.json.output.buyerType }}\n- Urgency: {{ $('AI | Lead Qualification Agent').item.json.output.urgencyLevel }}\n\nCreate a professional HTML email with:\n\n1. Clean, elegant design with luxury colors (gold #D4AF37, navy #1a2332)\n2. Personalized greeting using the lead's name\n3. Property highlights: 5 exclusive villas, private pools, 200m from sea, €1.5M-€3M\n4. Investment benefits: 9% tax, citizenship program, ROI potential\n5. Clear call-to-action based on lead temperature\n6. Professional signature\n\nKeep the HTML CONCISE and well-structured. Use inline CSS. Maximum 50 lines of HTML.\n\nProvide:\n- emailSubject: Compelling subject line (max 60 characters)\n- emailBody: Clean HTML email (concise, max 50 lines)\n- callToAction: Primary action text",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a luxury real estate email copywriter for Dolce Residences in Tivat, Montenegro. Create elegant, personalized HTML emails that convert leads. Use sophisticated language, highlight investment benefits, and create urgency. Keep HTML concise and clean. For HOT leads: create immediate urgency. For WARM leads: nurture with aspirational content. For COLD leads: educate and build trust. Always maintain luxury brand tone."
+        }
+      },
+      "id": "287df653-e7a6-4551-a36f-82e22273c157",
+      "name": "AI | Generate Cold Lead Email Content",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -1872,
+        2112
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.7
+        }
+      },
+      "id": "c2191a1f-cee2-4e7e-a7b2-80512b5bc6a0",
+      "name": "Groq Chat Model for Email Generation",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        2304
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "d8SaQpdXqwqcR9Ac",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"emailSubject\": \"Your Dream Villa Awaits in Montenegro\", \"emailBody\": \"<html><body><h1>Hello</h1><p>Email content here</p></body></html>\", \"callToAction\": \"Schedule Virtual Tour\"}",
+        "autoFix": true
+      },
+      "id": "d3c3dd40-23fa-44d1-86d8-034b314a888e",
+      "name": "Email Content Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1776,
+        2352
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Config | Workflow Settings').item.json.email }}",
+        "subject": "={{ $('AI | Generate Cold Lead Email Content').item.json.output.emailSubject }}",
+        "message": "={{ $('AI | Generate Cold Lead Email Content').item.json.output.emailBody }}",
+        "options": {}
+      },
+      "id": "afe8b012-ad3a-4bf1-b2dc-9eae4a88ddca",
+      "name": "Send Follow-up Email to Cold Lead",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1520,
+        2112
+      ],
+      "webhookId": "30c0baee-0863-487d-9ac1-b9e98157b722",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GJWqXEV5Eyjo43Q0",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -2480,
+        2880
+      ],
+      "id": "46464d29-8cbd-4fd3-b373-2f0fee504daf",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "d8SaQpdXqwqcR9Ac",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1744,
+        2496
+      ],
+      "id": "08c38827-de3c-41b7-b4f7-d5aad5793f27",
+      "name": "Groq Chat Model2",
+      "credentials": {
+        "groqApi": {
+          "id": "d8SaQpdXqwqcR9Ac",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Config | Workflow Settings": {
+      "main": [
+        [
+          {
+            "node": "Enrichment | Geo IP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrichment | Geo IP": {
+      "main": [
+        [
+          {
+            "node": "AI | Lead Qualification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI | Lead Qualification Agent": {
+      "main": [
+        [
+          {
+            "node": "Orchestration | Lead Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestration | Lead Routing": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI | Generate Cold Lead Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI | Generate Cold Lead Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI | Generate Cold Lead Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI | Lead Qualification Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI | Lead Qualification Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Config | Workflow Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI | Generate Cold Lead Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-up Email to Cold Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model for Email Generation": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI | Generate Cold Lead Email Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Content Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI | Generate Cold Lead Email Content",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Content Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a332495ea185e8bd5401385f23ae7961e4b288d8ca84bdb08ae4c806f54a5a21"
+  }
+}
